@@ -19,7 +19,7 @@ typedef struct write_req_s write_req_t;
 void
 on_close(uv_handle_t *handle)
 {
-    int id = (int)handle->data;
+    int id = VOIDP2INT(handle->data);
     sewer_on_close(sewer, id, (void*)handle);
     FREE(handle, "");
 }
@@ -52,7 +52,7 @@ alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 void
 on_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf)
 {
-    int id = (int)client->data;
+    int id = VOIDP2INT(client->data);
     if (nread < 0) {
         if (nread != UV_EOF) {
             LOG(LOG_ERROR, "read error: %s\n", uv_strerror(nread));
@@ -61,7 +61,6 @@ on_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf)
         close_connection_stream((uv_stream_t*)client);
         return;
     } else {
-        printf("on read %s\n", buf->base);
         sewer_on_read(sewer, id, buf->base, nread, client);
     }
 }
@@ -69,15 +68,14 @@ on_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf)
 void
 on_connect(uv_connect_t* req, int status)
 {
-    int id = (int)req->data;
-    req->handle->data = (void*)id;
-    printf("on on_connect %d\n", id);
+    int id = VOIDP2INT(req->data);
+    req->handle->data = req->data;
     sewer_on_connect(sewer, id, status, req->handle);
     uv_read_start((uv_stream_t *)req->handle, alloc_buffer, on_read);
 }
 
 int
-uv_connector(sewer_t *sewer, const char *addr, uint16_t port, void* udata)
+uv_connector(sewer_t *sewer, const char *addr, uint16_t port, int starter_id, void* udata)
 {
     uv_handle_t *src = (uv_handle_t *)udata;
     uv_tcp_t* s = (uv_tcp_t*)MALLOC(sizeof(uv_tcp_t), "create tcp connection");
@@ -89,8 +87,7 @@ uv_connector(sewer_t *sewer, const char *addr, uint16_t port, void* udata)
 
     uv_ip4_addr(addr, port, &dest);
 
-    s->data = src->data;
-    connect->data = src->data;
+    connect->data = INT2VOIDP(starter_id);
     return uv_tcp_connect(connect, s, (struct sockaddr*)&dest, on_connect);
 }
 
@@ -104,7 +101,6 @@ uv_closer(sewer_t *sewer, void* udata)
 size_t
 uv_writer(sewer_t *sewer, const char* data, size_t size, void* udata)
 {
-        printf("on write %s\n", data);    
     uv_stream_t *uvs = (uv_stream_t *)udata;
     write_req_t *req = MALLOC(sizeof(write_req_t), "write_sewer");
     req->buf = uv_buf_init(MALLOC(size, "write_sewer data"), size);
@@ -134,8 +130,7 @@ on_new_connection(uv_stream_t *server, int status)
 
     int id = sewer_on_connect(sewer, SEWER_NEW_CONNECTION, status, (void*)client);
     if (id >= 0) {
-        printf("on_new_connection  id %d\n", id);
-        client->data = (void*)id;
+        client->data = INT2VOIDP(id);
         uv_read_start((uv_stream_t *)client, alloc_buffer, on_read);
     }
 }
@@ -144,6 +139,10 @@ int main(int argc, char ** argv)
 {
     config_t cfg = parse_args(argc, argv);
     loop = uv_default_loop();
+
+    if (cfg.is_client) {
+        LOG(LOG_DEBUG, "is client\n");
+    }
 
     char *saddr = cfg.is_client ? "localhost" : "192.168.56.101";
     uint16_t port = cfg.is_client ? 12346 : 80;
@@ -158,11 +157,6 @@ int main(int argc, char ** argv)
         return 1;
     }
     
-    if (cfg.is_client) {
-        printf("is client\n");
-    } else {
-    }
-
     uv_tcp_t server;
     uv_tcp_init(loop, &server);
 

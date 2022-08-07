@@ -191,7 +191,7 @@ sewer_connect_remote(sewer_t *sewer, int id, void *udata)
     sewer_pipe_t *pipe = sewer_get_pipe(sewer, id);
     pipe->u_src = udata;
     
-    if (sewer->connector(sewer, sewer->addr, sewer->port, pipe->u_src) != 0) {
+    if (sewer->connector(sewer, sewer->addr, sewer->port, id, pipe->u_src) != 0) {
         destroy_pipe(sewer, pipe);
         LOG(LOG_ERROR, "pipe [%d] connect remote error", id);
         return;

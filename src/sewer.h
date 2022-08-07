@@ -20,7 +20,7 @@ struct sewer_pipe_s;
 typedef struct sewer_s sewer_t;
 typedef struct sewer_pipe_s sewer_pipe_t;
 
-typedef int (*sewer_connector)(sewer_t *sewer, const char *addr, uint16_t port, void* udata);
+typedef int (*sewer_connector)(sewer_t *sewer, const char *addr, uint16_t port, int starter_id, void* udata);
 typedef size_t (*sewer_writer)(sewer_t *sewer, const char* data, size_t len, void* udata);
 typedef void (*sewer_closer)(sewer_t *sewer, void* udata);
 
