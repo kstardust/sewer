@@ -74,6 +74,10 @@ init_pipe(sewer_pipe_t * pipe)
 void
 destroy_pipe(sewer_t *sewer, sewer_pipe_t *pipe)
 {
+    if (pipe->status == P_FREE) {
+        return;
+    }
+    
     if (pipe->u_src) {
         sewer->closer(sewer, pipe->u_src);
     }
