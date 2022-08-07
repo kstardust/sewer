@@ -306,11 +306,14 @@ sewer_on_close(sewer_t* sewer, int id, void *udata)
 {
     CHECK_ID(id, "sewer_on_close", ;);
     sewer_pipe_t *pipe = sewer_get_pipe(sewer, id);
-    
+
     if (udata == pipe->u_dst)
         pipe->u_dst = NULL;
     else if (udata == pipe->u_src)
         pipe->u_src = NULL;
+    else
+        // notice this is a async callback, a new connection may has reused the pipe
+        return;
     
     destroy_pipe(sewer, pipe);
 }
