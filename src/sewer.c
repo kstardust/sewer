@@ -174,9 +174,10 @@ void
 sewer_reply_hello(sewer_t *sewer, int id, void *udata)
 {
     LOG(LOG_DEBUG, "pipe [%d] will reply hello", id);
+    
     sewer_pipe_t *pipe = sewer_get_pipe(sewer, id);
 
-    if (sewer->writer(sewer, "hi", 6, pipe->u_src) < 0) {
+    if (sewer->writer(sewer, "hi", 3, pipe->u_src) < 0) {
         destroy_pipe(sewer, pipe);
         LOG(LOG_DEBUG, "pipe [%d] sewer_say_hello write error", id);
         return;
@@ -184,6 +185,7 @@ sewer_reply_hello(sewer_t *sewer, int id, void *udata)
 
     pipe->u_dst = udata;
     pipe->status = P_TRANS;
+    
     LOG(LOG_DEBUG, "pipe [%d] changes status [%s]", id, STATUS_STR(pipe->status));    
 }
 
