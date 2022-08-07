@@ -14,6 +14,6 @@ set(COMMON_SRC
   src/sewer.c
 )
 
-add_executable(sewer src/sewer.c ${COMMON_SRC})
+add_executable(sewer_uv_main src/sewer.c ${COMMON_SRC})
 
 target_link_libraries(sewer ${LIBUV_LIBRARY})
